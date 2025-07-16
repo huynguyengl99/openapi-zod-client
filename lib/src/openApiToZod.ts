@@ -10,10 +10,14 @@ import { inferRequiredSchema } from "./inferRequiredOnly";
 
 function getZodVersion(): 3 | 4 {
     try {
+        console.log("Detecting zod version");
         const zodPackage = require("zod/package.json");
         const version = zodPackage.version;
+        console.log(`Detected zod version ${version}`);
         return version.startsWith("4.") ? 4 : 3;
-    } catch {
+    } catch (error) {
+        console.log(error);
+        console.log("Fallback to zod 3");
         return 3;
     }
 }
