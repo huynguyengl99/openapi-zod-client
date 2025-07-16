@@ -1,7 +1,7 @@
 import path from "node:path";
 
 import type { OpenAPIObject } from "openapi3-ts";
-import { capitalize, pick } from "pastable/server";
+import { capitalize, pick, snakeToCamel } from "pastable/server";
 import type { Options } from "prettier";
 import { match } from "ts-pattern";
 
@@ -109,6 +109,7 @@ export const generateZodClientFromOpenAPI = async <TOptions extends TemplateCont
                     ...options,
                     groupStrategy: "none",
                     apiClientName: `${capitalize(groupName)}Api`,
+                    groupName: snakeToCamel(groupName),
                 },
             });
             const prettyGroupOutput = maybePretty(groupOutput, prettierConfig);
