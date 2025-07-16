@@ -8,20 +8,15 @@ import type { TemplateContext } from "./template-context";
 import { escapeControlCharacters, isPrimitiveType, wrapWithQuotesIfNeeded } from "./utils";
 import { inferRequiredSchema } from "./inferRequiredOnly";
 
-// Zod version detection utility
 function getZodVersion(): 3 | 4 {
     try {
-        // Try to require zod to check version
         const zodPackage = require("zod/package.json");
         const version = zodPackage.version;
         return version.startsWith("4.") ? 4 : 3;
     } catch {
-        // Default to v3 if detection fails
         return 3;
     }
 }
-
-const ZOD_VERSION = getZodVersion();
 
 type ConversionArgs = {
     schema: SchemaObject | ReferenceObject;
@@ -217,11 +212,11 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
                 .with("string", () =>
                     match(schema.format)
                         .with("binary", () => "z.instanceof(File)")
-                        .with("email", () => (ZOD_VERSION === 4 ? "z.email()" : "z.string()"))
-                        .with("uuid", () => (ZOD_VERSION === 4 ? "z.uuid()" : "z.string()"))
-                        .with("uri", () => (ZOD_VERSION === 4 ? "z.url()" : "z.string()"))
-                        .with("hostname", () => (ZOD_VERSION === 4 ? "z.url()" : "z.string()"))
-                        .with("date-time", () => (ZOD_VERSION === 4 ? "z.iso.datetime()" : "z.string()"))
+                        .with("email", () => (getZodVersion() === 4 ? "z.email()" : "z.string()"))
+                        .with("uuid", () => (getZodVersion() === 4 ? "z.uuid()" : "z.string()"))
+                        .with("uri", () => (getZodVersion() === 4 ? "z.url()" : "z.string()"))
+                        .with("hostname", () => (getZodVersion() === 4 ? "z.url()" : "z.string()"))
+                        .with("date-time", () => (getZodVersion() === 4 ? "z.iso.datetime()" : "z.string()"))
                         .otherwise(() => "z.string()")
                 )
                 .otherwise((type) => `z.${type}()`)
@@ -305,7 +300,7 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
 
         const partial = isPartial ? ".partial()" : "";
 
-        if (ZOD_VERSION === 4) {
+        if (getZodVersion() === 4) {
             // Use z.strictObject() or z.looseObject() for Zod v4
             let objectFn = "z.object";
             if (options?.strictObjects) {
@@ -422,7 +417,7 @@ const getZodChainableStringValidations = (schema: SchemaObject) => {
         validations.push(`regex(${formatPatternIfNeeded(schema.pattern)})`);
     }
 
-    if (schema.format && ZOD_VERSION === 3) {
+    if (schema.format && getZodVersion() === 3) {
         const chain = match(schema.format)
             .with("email", () => "email()")
             .with("hostname", () => "url()")
