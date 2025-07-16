@@ -68,7 +68,7 @@ test("api-doc.yaml with groupStrategy tag-file and shouldExportAllTypes", async 
     }
 });
 
-test("api-doc.yaml with groupStrategy tag-file and shouldExportAllTypes and custom template", async () => {
+test("api-doc.yaml with groupStrategy tag-file and shouldExportAllTypes and types only template", async () => {
     const openApiDoc = (await SwaggerParser.parse(resolve(__dirname, "schemas/api-doc.yaml"))) as OpenAPIObject;
 
     const outputDir = resolve(__dirname, "test-generation/custom-template-grouped-output");
@@ -81,7 +81,7 @@ test("api-doc.yaml with groupStrategy tag-file and shouldExportAllTypes and cust
     await generateZodClientFromOpenAPI({
         openApiDoc,
         distPath: outputDir,
-        templatePath: resolve(__dirname, "test-generation/custom-template.hbs"),
+        templatePath: resolve(__dirname, "../src/templates/types-only.hbs"),
         options: {
             groupStrategy: "tag-file",
             noGroupIndex: true,
