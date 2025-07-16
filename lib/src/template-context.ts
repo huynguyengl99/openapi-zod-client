@@ -350,9 +350,11 @@ export type TemplateContextOptions = {
      */
     groupStrategy?: TemplateContextGroupStrategy;
     /**
-     * When true, will not generate index.ts file when using group strategies
+     * When true, will generate index.ts file when using group strategies
+     *
+     * @default true
      */
-    noGroupIndex?: boolean;
+    groupIndex?: boolean;
     /**
      * schema complexity threshold to determine which one (using less than `<` operator) should be assigned to a variable
      * tl;dr higher means more schemas will be inlined (rather than assigned to a variable)

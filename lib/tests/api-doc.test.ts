@@ -75,6 +75,7 @@ test("api-doc.yaml with groupStrategy tag-file and shouldExportAllTypes and type
     const expectedDir = resolve(__dirname, "test-generation/custom-template-grouped-expected");
     
     const fs = await import("@liuli-util/fs-extra");
+    await fs.emptyDir(outputDir)
     await fs.ensureDir(outputDir);
     await fs.ensureDir(expectedDir);
 
@@ -84,30 +85,29 @@ test("api-doc.yaml with groupStrategy tag-file and shouldExportAllTypes and type
         templatePath: resolve(__dirname, "../src/templates/types-only.hbs"),
         options: {
             groupStrategy: "tag-file",
-            noGroupIndex: true,
+            groupIndex: false,
             shouldExportAllTypes: true,
         },
     });
 
     // Read generated files and compare with expected
     const outputFiles = await fs.readdir(outputDir);
+    const expectedFiles = await fs.readdir(expectedDir);
     
-    for (const fileName of outputFiles) {
-        if (!fileName.endsWith('.ts')) continue;
-        
+    // Filter only .ts files
+    const outputTsFiles = outputFiles.filter(f => f.endsWith('.ts')).sort();
+    const expectedTsFiles = expectedFiles.filter(f => f.endsWith('.ts')).sort();
+    
+    // Check that both directories have the same files
+    expect(outputTsFiles).toEqual(expectedTsFiles);
+    
+    // Check content of each file
+    for (const fileName of outputTsFiles) {
         const outputPath = resolve(outputDir, fileName);
         const expectedPath = resolve(expectedDir, fileName);
         
         const actualContent = readFileSync(outputPath, "utf8");
-        
-        let expectedContent: string;
-        try {
-            expectedContent = readFileSync(expectedPath, "utf8");
-        } catch (error) {
-            // If expected file doesn't exist, create it from actual output
-            expectedContent = actualContent;
-            writeFileSync(expectedPath, expectedContent, "utf8");
-        }
+        const expectedContent = readFileSync(expectedPath, "utf8");
         
         expect(actualContent).toBe(expectedContent);
     }

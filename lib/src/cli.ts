@@ -42,10 +42,8 @@ cli.command("<input>", "path/url to OpenAPI/Swagger document as json/yaml")
         "--group-strategy",
         "groups endpoints by a given strategy, possible values are: 'none' | 'tag' | 'method' | 'tag-file' | 'method-file'"
     )
-    .option(
-        "--no-group-index",
-        "when true, will not generate index.ts file when using group strategies"
-    )
+    .option("--group-index", "Generate index.ts file when using group strategies", { default: true })
+    .option("--no-group-index", "Disable index.ts file generation when using group strategies")
     .option(
         "--complexity-threshold",
         "schema complexity threshold to determine which one (using less than `<` operator) should be assigned to a variable"
@@ -98,7 +96,7 @@ cli.command("<input>", "path/url to OpenAPI/Swagger document as json/yaml")
                 allReadonly: options.allReadonly,
                 strictObjects: options.strictObjects,
                 additionalPropertiesDefaultValue,
-                noGroupIndex: options.noGroupIndex,
+                groupIndex: options.groupIndex,
             },
         });
         console.log(`Done generating <${distPath}> !`);

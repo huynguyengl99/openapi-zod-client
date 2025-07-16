@@ -73,7 +73,8 @@ Options:
   --with-description                when true, will add z.describe(xxx)
   --with-docs                       when true, will add jsdoc comments to generated types 
   --group-strategy                  groups endpoints by a given strategy, possible values are: 'none' | 'tag' | 'method' | 'tag-file' | 'method-file'
-  --no-group-index                  when true, will not generate index.ts file when using group strategies
+  --group-index                     Generate index.ts file when using group strategies (default: true)
+  --no-group-index                  Disable index.ts file generation when using group strategies
   --complexity-threshold            schema complexity threshold to determine which one (using less than `<` operator) should be assigned to a variable
   --default-status                  when defined as `auto-correct`, will automatically use `default` as fallback for `response` when no status code was declared
   --all-readonly                    when true, all generated objects and arrays will be readonly
