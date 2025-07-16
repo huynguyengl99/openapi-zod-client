@@ -73,9 +73,12 @@ export const generateZodClientFromOpenAPI = async <TOptions extends TemplateCont
         const indexSource = await fs.readFile(path.join(__dirname, "../src/templates/grouped-index.hbs"), "utf8");
         const indexTemplate = hbs.compile(indexSource);
         const indexOutput = maybePretty(indexTemplate({ groupNames }), prettierConfig);
-        outputByGroupName["__index"] = indexOutput;
+        
+        if (!options?.noGroupIndex) {
+            outputByGroupName["__index"] = indexOutput;
+        }
 
-        if (willWriteToFile) {
+        if (willWriteToFile && !options?.noGroupIndex) {
             await fs.writeFile(path.join(distPath, "index.ts"), indexOutput);
         }
 
