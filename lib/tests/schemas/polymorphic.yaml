@@ -1,0 +1,482 @@
+openapi: 3.0.3
+info:
+    title: Project Management API Documentation
+    version: 1.0.0
+    description: Project Management OpenAPI specification
+paths:
+    /api/projects/:
+        get:
+            operationId: projectsList
+            description: List all projects where user has access.
+            parameters:
+                - in: header
+                  name: accept-language
+                  schema:
+                      type: string
+                  description: Language code, such as 'en-US'. The default value is en
+                - name: limit
+                  required: false
+                  in: query
+                  description: Number of results to return per page.
+                  schema:
+                      type: integer
+                - name: offset
+                  required: false
+                  in: query
+                  description: The initial index from which to return the results.
+                  schema:
+                      type: integer
+            tags:
+                - projects
+            security:
+                - JWTAuthentication: []
+                  JWTCookieAuthentication: []
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PaginatedProjectPolymorphicList"
+                    description: ""
+        post:
+            operationId: projectsCreate
+            description: Create a new personal or team project.
+            parameters:
+                - in: header
+                  name: accept-language
+                  schema:
+                      type: string
+                  description: Language code, such as 'en-US'. The default value is en
+            tags:
+                - projects
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/ProjectCreateRequest"
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: "#/components/schemas/ProjectCreateRequest"
+                    multipart/form-data:
+                        schema:
+                            $ref: "#/components/schemas/ProjectCreateRequest"
+            security:
+                - JWTAuthentication: []
+                  JWTCookieAuthentication: []
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ProjectCreate"
+                    description: ""
+    /api/projects/{id}/:
+        get:
+            operationId: projectsRetrieve
+            description: Get project details.
+            parameters:
+                - in: header
+                  name: accept-language
+                  schema:
+                      type: string
+                  description: Language code, such as 'en-US'. The default value is en
+                - in: path
+                  name: id
+                  schema:
+                      type: string
+                      pattern: ^[0-9]+$
+                  required: true
+            tags:
+                - projects
+            security:
+                - JWTAuthentication: []
+                  JWTCookieAuthentication: []
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ProjectPolymorphic"
+                    description: ""
+        put:
+            operationId: projectsUpdate
+            description: Update project information (requires permissions).
+            parameters:
+                - in: header
+                  name: accept-language
+                  schema:
+                      type: string
+                  description: Language code, such as 'en-US'. The default value is en
+                - in: path
+                  name: id
+                  schema:
+                      type: string
+                      pattern: ^[0-9]+$
+                  required: true
+            tags:
+                - projects
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/ProjectPolymorphicRequest"
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: "#/components/schemas/ProjectPolymorphicRequest"
+                    multipart/form-data:
+                        schema:
+                            $ref: "#/components/schemas/ProjectPolymorphicRequest"
+            security:
+                - JWTAuthentication: []
+                  JWTCookieAuthentication: []
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ProjectPolymorphic"
+                    description: ""
+        patch:
+            operationId: projectsPartialUpdate
+            description: Partially update project information (requires permissions).
+            parameters:
+                - in: header
+                  name: accept-language
+                  schema:
+                      type: string
+                  description: Language code, such as 'en-US'. The default value is en
+                - in: path
+                  name: id
+                  schema:
+                      type: string
+                      pattern: ^[0-9]+$
+                  required: true
+            tags:
+                - projects
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/PatchedProjectPolymorphicRequest"
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: "#/components/schemas/PatchedProjectPolymorphicRequest"
+                    multipart/form-data:
+                        schema:
+                            $ref: "#/components/schemas/PatchedProjectPolymorphicRequest"
+            security:
+                - JWTAuthentication: []
+                  JWTCookieAuthentication: []
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ProjectPolymorphic"
+                    description: ""
+        delete:
+            operationId: projectsDestroy
+            description: Delete project (owners only, personal projects excluded).
+            parameters:
+                - in: header
+                  name: accept-language
+                  schema:
+                      type: string
+                  description: Language code, such as 'en-US'. The default value is en
+                - in: path
+                  name: id
+                  schema:
+                      type: string
+                      pattern: ^[0-9]+$
+                  required: true
+            tags:
+                - projects
+            security:
+                - JWTAuthentication: []
+                  JWTCookieAuthentication: []
+            responses:
+                "204":
+                    description: No response body
+components:
+    schemas:
+        PersonalProject:
+            type: object
+            description: Serializer for personal project details.
+            properties:
+                id:
+                    type: integer
+                    readOnly: true
+                title:
+                    type: string
+                    maxLength: 150
+                description:
+                    type: string
+                priority:
+                    type: string
+                    enum: [low, medium, high, urgent]
+                    default: medium
+                dueDate:
+                    type: string
+                    format: date
+                createdAt:
+                    type: string
+                    format: date-time
+                    readOnly: true
+                updatedAt:
+                    type: string
+                    format: date-time
+                    readOnly: true
+            required:
+                - createdAt
+                - id
+                - title
+                - updatedAt
+        PersonalProjectRequest:
+            type: object
+            description: Serializer for personal project details.
+            properties:
+                title:
+                    type: string
+                    minLength: 1
+                    maxLength: 150
+                description:
+                    type: string
+                priority:
+                    type: string
+                    enum: [low, medium, high, urgent]
+                    default: medium
+                dueDate:
+                    type: string
+                    format: date
+            required:
+                - title
+        PersonalProjectTyped:
+            allOf:
+                - type: object
+                  properties:
+                      project_type:
+                          type: string
+                  required:
+                      - project_type
+                - $ref: "#/components/schemas/PersonalProject"
+        PersonalProjectTypedRequest:
+            allOf:
+                - type: object
+                  properties:
+                      project_type:
+                          type: string
+                  required:
+                      - project_type
+                - $ref: "#/components/schemas/PersonalProjectRequest"
+        TeamProject:
+            type: object
+            description: Serializer for team project details.
+            properties:
+                id:
+                    type: integer
+                    readOnly: true
+                title:
+                    type: string
+                    maxLength: 150
+                description:
+                    type: string
+                status:
+                    type: string
+                    enum: [planning, active, on_hold, completed]
+                    default: planning
+                budget:
+                    type: number
+                    format: decimal
+                teamSize:
+                    type: integer
+                    minimum: 1
+                isPublic:
+                    type: boolean
+                    default: false
+                createdAt:
+                    type: string
+                    format: date-time
+                    readOnly: true
+                updatedAt:
+                    type: string
+                    format: date-time
+                    readOnly: true
+            required:
+                - createdAt
+                - id
+                - title
+                - updatedAt
+        TeamProjectRequest:
+            type: object
+            description: Serializer for team project details.
+            properties:
+                title:
+                    type: string
+                    minLength: 1
+                    maxLength: 150
+                description:
+                    type: string
+                status:
+                    type: string
+                    enum: [planning, active, on_hold, completed]
+                    default: planning
+                budget:
+                    type: number
+                    format: decimal
+                teamSize:
+                    type: integer
+                    minimum: 1
+                isPublic:
+                    type: boolean
+                    default: false
+            required:
+                - title
+        TeamProjectTyped:
+            allOf:
+                - type: object
+                  properties:
+                      project_type:
+                          type: string
+                  required:
+                      - project_type
+                - $ref: "#/components/schemas/TeamProject"
+        TeamProjectTypedRequest:
+            allOf:
+                - type: object
+                  properties:
+                      project_type:
+                          type: string
+                  required:
+                      - project_type
+                - $ref: "#/components/schemas/TeamProjectRequest"
+        PaginatedProjectPolymorphicList:
+            type: object
+            required:
+                - count
+                - results
+            properties:
+                count:
+                    type: integer
+                    example: 123
+                next:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://api.example.org/projects/?offset=400&limit=100
+                previous:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://api.example.org/projects/?offset=200&limit=100
+                results:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/ProjectPolymorphic"
+        PatchedPersonalProjectRequest:
+            type: object
+            description: Serializer for personal project details.
+            properties:
+                title:
+                    type: string
+                    minLength: 1
+                    maxLength: 150
+                description:
+                    type: string
+                priority:
+                    type: string
+                    enum: [low, medium, high, urgent]
+                    default: medium
+                dueDate:
+                    type: string
+                    format: date
+        PatchedPersonalProjectTypedRequest:
+            allOf:
+                - type: object
+                  properties:
+                      project_type:
+                          type: string
+                - $ref: "#/components/schemas/PatchedPersonalProjectRequest"
+        PatchedTeamProjectRequest:
+            type: object
+            description: Serializer for team project details.
+            properties:
+                title:
+                    type: string
+                    minLength: 1
+                    maxLength: 150
+                description:
+                    type: string
+                status:
+                    type: string
+                    enum: [planning, active, on_hold, completed]
+                    default: planning
+                budget:
+                    type: number
+                    format: decimal
+                teamSize:
+                    type: integer
+                    minimum: 1
+                isPublic:
+                    type: boolean
+                    default: false
+        PatchedTeamProjectTypedRequest:
+            allOf:
+                - type: object
+                  properties:
+                      project_type:
+                          type: string
+                - $ref: "#/components/schemas/PatchedTeamProjectRequest"
+        PatchedProjectPolymorphicRequest:
+            oneOf:
+                - $ref: "#/components/schemas/PatchedPersonalProjectTypedRequest"
+                - $ref: "#/components/schemas/PatchedTeamProjectTypedRequest"
+            discriminator:
+                propertyName: project_type
+                mapping:
+                    PersonalProject: "#/components/schemas/PatchedPersonalProjectTypedRequest"
+                    TeamProject: "#/components/schemas/PatchedTeamProjectTypedRequest"
+        ProjectCreate:
+            oneOf:
+                - $ref: "#/components/schemas/PersonalProjectTyped"
+                - $ref: "#/components/schemas/TeamProjectTyped"
+            discriminator:
+                propertyName: project_type
+                mapping:
+                    PersonalProject: "#/components/schemas/PersonalProjectTyped"
+                    TeamProject: "#/components/schemas/TeamProjectTyped"
+        ProjectCreateRequest:
+            oneOf:
+                - $ref: "#/components/schemas/PersonalProjectTypedRequest"
+                - $ref: "#/components/schemas/TeamProjectTypedRequest"
+            discriminator:
+                propertyName: project_type
+                mapping:
+                    PersonalProject: "#/components/schemas/PersonalProjectTypedRequest"
+                    TeamProject: "#/components/schemas/TeamProjectTypedRequest"
+        ProjectPolymorphic:
+            oneOf:
+                - $ref: "#/components/schemas/PersonalProjectTyped"
+                - $ref: "#/components/schemas/TeamProjectTyped"
+            discriminator:
+                propertyName: project_type
+                mapping:
+                    PersonalProject: "#/components/schemas/PersonalProjectTyped"
+                    TeamProject: "#/components/schemas/TeamProjectTyped"
+        ProjectPolymorphicRequest:
+            oneOf:
+                - $ref: "#/components/schemas/PersonalProjectTypedRequest"
+                - $ref: "#/components/schemas/TeamProjectTypedRequest"
+            discriminator:
+                propertyName: project_type
+                mapping:
+                    PersonalProject: "#/components/schemas/PersonalProjectTypedRequest"
+                    TeamProject: "#/components/schemas/TeamProjectTypedRequest"
+    securitySchemes:
+        JWTAuthentication:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+        JWTCookieAuthentication:
+            type: apiKey
+            in: cookie
+            name: auth-jwt
