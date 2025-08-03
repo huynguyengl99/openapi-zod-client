@@ -166,10 +166,16 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
                 })
             );
         }
+        // Check if this is a discriminated union case (polymorphic schema)
+        const isDiscriminatedUnion = ctx?.discriminatorHandler && code.meta.referencedBy?.some(ref => 
+            ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref)
+        );
+        
         const first = types.at(0)!;
+        const methodName = isDiscriminatedUnion ? "merge" : "and";
         const rest = types
             .slice(1)
-            .map((type) => `and(${type.toString()})`)
+            .map((type) => `${methodName}(${type.toString()})`)
             .join(".");
 
         return code.assign(`${first.toString()}.${rest}`);

@@ -104,7 +104,7 @@ const PersonalProject: z.ZodType<PersonalProject> = z
 const PersonalProjectTyped: z.ZodType<PersonalProjectTyped> = z
   .object({ project_type: z.literal("PersonalProject") })
   .passthrough()
-  .and(PersonalProject);
+  .merge(PersonalProject);
 const TeamProject: z.ZodType<TeamProject> = z
   .object({
     id: z.number().int(),
@@ -124,7 +124,7 @@ const TeamProject: z.ZodType<TeamProject> = z
 const TeamProjectTyped: z.ZodType<TeamProjectTyped> = z
   .object({ project_type: z.literal("TeamProject") })
   .passthrough()
-  .and(TeamProject);
+  .merge(TeamProject);
 const ProjectPolymorphic = z.discriminatedUnion("project_type", [
   PersonalProjectTyped,
   TeamProjectTyped,
@@ -152,7 +152,7 @@ const PersonalProjectRequest: z.ZodType<PersonalProjectRequest> = z
 const PersonalProjectTypedRequest: z.ZodType<PersonalProjectTypedRequest> = z
   .object({ project_type: z.literal("PersonalProject") })
   .passthrough()
-  .and(PersonalProjectRequest);
+  .merge(PersonalProjectRequest);
 const TeamProjectRequest: z.ZodType<TeamProjectRequest> = z
   .object({
     title: z.string().min(1).max(150),
@@ -169,7 +169,7 @@ const TeamProjectRequest: z.ZodType<TeamProjectRequest> = z
 const TeamProjectTypedRequest: z.ZodType<TeamProjectTypedRequest> = z
   .object({ project_type: z.literal("TeamProject") })
   .passthrough()
-  .and(TeamProjectRequest);
+  .merge(TeamProjectRequest);
 const ProjectCreateRequest: z.ZodType<ProjectCreateRequest> =
   z.discriminatedUnion("project_type", [
     PersonalProjectTypedRequest,
@@ -199,7 +199,7 @@ const PatchedPersonalProjectTypedRequest: z.ZodType<PatchedPersonalProjectTypedR
     .object({ project_type: z.literal("PersonalProject") })
     .partial()
     .passthrough()
-    .and(PatchedPersonalProjectRequest);
+    .merge(PatchedPersonalProjectRequest);
 const PatchedTeamProjectRequest: z.ZodType<PatchedTeamProjectRequest> = z
   .object({
     title: z.string().min(1).max(150),
@@ -218,7 +218,7 @@ const PatchedTeamProjectTypedRequest: z.ZodType<PatchedTeamProjectTypedRequest> 
     .object({ project_type: z.literal("TeamProject") })
     .partial()
     .passthrough()
-    .and(PatchedTeamProjectRequest);
+    .merge(PatchedTeamProjectRequest);
 const PatchedProjectPolymorphicRequest: z.ZodType<PatchedProjectPolymorphicRequest> =
   z.discriminatedUnion("project_type", [
     PatchedPersonalProjectTypedRequest,
