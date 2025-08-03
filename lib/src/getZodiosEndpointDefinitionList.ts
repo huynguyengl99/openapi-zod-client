@@ -18,6 +18,7 @@ import { getOpenApiDependencyGraph } from "./getOpenApiDependencyGraph";
 import { isReferenceObject } from "./isReferenceObject";
 import { makeSchemaResolver } from "./makeSchemaResolver";
 import { getZodChain, getZodSchema } from "./openApiToZod";
+import { DiscriminatorHandler } from "./discriminator";
 import { getSchemaComplexity } from "./schema-complexity";
 import type { TemplateContext } from "./template-context";
 import {
@@ -64,7 +65,8 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
         )
         .otherwise((fn) => fn);
 
-    const ctx: ConversionTypeContext = { resolver, zodSchemaByName: {}, schemaByName: {} };
+    const discriminatorHandler = new DiscriminatorHandler(doc);
+    const ctx: ConversionTypeContext = { resolver, zodSchemaByName: {}, schemaByName: {}, discriminatorHandler };
     if (options?.exportAllNamedSchemas) {
         ctx.schemasByName = {};
     }
@@ -427,7 +429,10 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
     }
 
     return {
-        ...(ctx as Required<ConversionTypeContext>),
+        resolver: ctx.resolver,
+        zodSchemaByName: ctx.zodSchemaByName,
+        schemaByName: ctx.schemaByName,
+        ...(ctx.schemasByName && { schemasByName: ctx.schemasByName }),
         ...graphs,
         endpoints,
         issues: {

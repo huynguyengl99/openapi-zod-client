@@ -1,14 +1,16 @@
-import type { ReferenceObject, SchemaObject } from "openapi3-ts";
+import type { OpenAPIObject, ReferenceObject, SchemaObject } from "openapi3-ts";
 
 import { isReferenceObject } from "./isReferenceObject";
 import type { DocumentResolver } from "./makeSchemaResolver";
 import { getSchemaComplexity } from "./schema-complexity";
+import type { DiscriminatorHandler } from "./discriminator";
 
 export type ConversionTypeContext = {
     resolver: DocumentResolver;
     zodSchemaByName: Record<string, string>;
     schemaByName: Record<string, string>;
     schemasByName?: Record<string, string[]>;
+    discriminatorHandler?: DiscriminatorHandler;
 };
 
 export type CodeMetaData = {

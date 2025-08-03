@@ -346,8 +346,9 @@ test("CodeMeta with ref", () => {
             },
         },
     } as Record<string, SchemaObject>;
+    const doc = { components: { schemas } } as any;
     const ctx: ConversionTypeContext = {
-        resolver: makeSchemaResolver({ components: { schemas } } as any),
+        resolver: makeSchemaResolver(doc),
         zodSchemaByName: {},
         schemaByName: {},
     };
@@ -401,8 +402,9 @@ test("CodeMeta with nested refs", () => {
         },
         DeepNested: { type: "object", properties: { deep: { type: "boolean" } } },
     } as Record<string, SchemaObject>;
+    const doc = { components: { schemas } } as any;
     const ctx: ConversionTypeContext = {
-        resolver: makeSchemaResolver({ components: { schemas } } as any),
+        resolver: makeSchemaResolver(doc),
         zodSchemaByName: {},
         schemaByName: {},
     };

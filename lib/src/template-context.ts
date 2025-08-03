@@ -8,6 +8,7 @@ import type { EndpointDefinitionWithRefs } from "./getZodiosEndpointDefinitionLi
 import { getZodiosEndpointDefinitionList } from "./getZodiosEndpointDefinitionList";
 import type { TsConversionContext } from "./openApiToTypescript";
 import { getTypescriptFromOpenApi } from "./openApiToTypescript";
+import { DiscriminatorHandler } from "./discriminator";
 import { getZodSchema } from "./openApiToZod";
 import { topologicalSort } from "./topologicalSort";
 import { asComponentSchema, normalizeString } from "./utils";
@@ -56,7 +57,8 @@ export const getZodClientTemplateContext = (
     for (const [name] of Object.entries(docSchemas)) {
         const ref = asComponentSchema(name);
         const isCircular = ref && depsGraphs.deepDependencyGraph[ref]?.has(ref);
-        const ctx: TsConversionContext = { nodeByRef: {}, resolver: result.resolver, visitedsRefs: {} };
+        const discriminatorHandler = new DiscriminatorHandler(openApiDoc);
+        const ctx: TsConversionContext = { nodeByRef: {}, resolver: result.resolver, visitedsRefs: {}, discriminatorHandler };
 
         // Specifically check isCircular if shouldExportAllTypes is false. Either should cause shouldGenerateType to be true.
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
@@ -66,7 +68,7 @@ export const getZodClientTemplateContext = (
             const node = getTypescriptFromOpenApi({
                 schema: result.resolver.getSchemaByRef(ref),
                 ctx,
-                meta: { name: schemaName },
+                meta: { name: schemaName, $ref: ref },
                 options,
             }) as ts.Node;
             data.types[schemaName] = printTs(node).replace("export ", "");
@@ -81,7 +83,7 @@ export const getZodClientTemplateContext = (
                     const node = getTypescriptFromOpenApi({
                         schema: nodeSchema,
                         ctx,
-                        meta: { name: depSchemaName },
+                        meta: { name: depSchemaName, $ref: depRef },
                         options,
                     }) as ts.Node;
                     data.types[depSchemaName] = printTs(node).replace("export ", "");

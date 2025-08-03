@@ -285,9 +285,35 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
                     }
                 }
 
-                const propCode =
-                    getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
-                    getZodChain({ schema: propActualSchema as SchemaObject, meta: propMetadata, options });
+                // Check if this property is a discriminator field and should use literal type
+                let propCode: string;
+                
+                // Only apply discriminator logic to known discriminator properties
+                if (ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) && !isReferenceObject(propSchema) && propSchema.type === 'string') {
+                    // Find the schema reference that has a discriminator mapping
+                    const discriminatorRef = code.meta.referencedBy?.find(ref => 
+                        ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref)
+                    );
+                    
+                    if (discriminatorRef?.ref) {
+                        const literalValue = ctx.discriminatorHandler.getLiteralValue(discriminatorRef.ref);
+                        if (literalValue) {
+                            propCode = `z.literal("${literalValue}")`;
+                        } else {
+                            propCode =
+                                getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
+                                getZodChain({ schema: propActualSchema as SchemaObject, meta: propMetadata, options });
+                        }
+                    } else {
+                        propCode =
+                            getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
+                            getZodChain({ schema: propActualSchema as SchemaObject, meta: propMetadata, options });
+                    }
+                } else {
+                    propCode =
+                        getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
+                        getZodChain({ schema: propActualSchema as SchemaObject, meta: propMetadata, options });
+                }
 
                 return [prop, propCode.toString()];
             });
@@ -486,3 +512,4 @@ const getZodChainableArrayValidations = (schema: SchemaObject) => {
 
     return validations.join(".");
 };
+

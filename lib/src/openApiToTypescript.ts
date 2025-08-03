@@ -8,6 +8,7 @@ import type { TemplateContext } from "./template-context";
 import { wrapWithQuotesIfNeeded } from "./utils";
 import { inferRequiredSchema } from "./inferRequiredOnly";
 import generateJSDocArray from "./generateJSDocArray";
+import type { DiscriminatorHandler } from "./discriminator";
 
 type TsConversionArgs = {
     schema: SchemaObject | ReferenceObject;
@@ -21,6 +22,7 @@ export type TsConversionContext = {
     resolver: DocumentResolver;
     rootRef?: string;
     visitedsRefs?: Record<string, boolean>;
+    discriminatorHandler?: DiscriminatorHandler;
 };
 
 type MaybeWrapReadOnlyType =
@@ -282,6 +284,18 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
                         propType = t.reference(propType);
                     }
 
+                    // Apply discriminator literal type for TypeScript if this is a discriminator property
+                    if (ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) && !isReferenceObject(propSchema) && propSchema.type === 'string') {
+                        // Check discriminator value using handler
+                        const currentRef = inheritedMeta?.$ref || ctx?.rootRef;
+                        if (currentRef) {
+                            const discriminatorValue = ctx.discriminatorHandler.getLiteralValue(currentRef);
+                            if (discriminatorValue) {
+                                propType = discriminatorValue;
+                            }
+                        }
+                    }
+
                     const isRequired = Boolean(isPartial ? true : schema.required?.includes(prop));
                     return [`${wrapWithQuotesIfNeeded(prop)}`, isRequired ? propType : t.optional(propType)];
                 })
@@ -354,3 +368,4 @@ const wrapTypeIfInline = ({
 
     return typeDef as ts.Node;
 };
+
