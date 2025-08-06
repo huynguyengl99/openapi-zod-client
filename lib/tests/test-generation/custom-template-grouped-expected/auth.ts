@@ -14,6 +14,7 @@ type UserDetails = {
   email: string;
   firstName?: string | undefined;
   lastName?: string | undefined;
+  avatarImage?: (string | null) | undefined;
 };
 type PasswordChangeRequest = {
   newPassword1: string;
@@ -52,8 +53,10 @@ type CookieTokenRefresh = {
 type UserDetailsRequest = Partial<{
   firstName: string;
   lastName: string;
+  avatarImage: File | string | null;
 }>;
 type PatchedUserDetailsRequest = Partial<{
   firstName: string;
   lastName: string;
+  avatarImage: File | string | null;
 }>;

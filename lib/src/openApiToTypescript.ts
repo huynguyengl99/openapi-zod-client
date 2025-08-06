@@ -196,8 +196,17 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
                     : t.union(withoutNull);
             }
 
-            if (schemaType === "string")
+            if (schemaType === "string") {
+                // Handle binary format as File type
+                if (!isReferenceObject(schema) && schema.format === "binary") {
+                    if (schema.nullable) {
+                        return t.union([t.reference("File"), t.string(), t.reference("null")]);
+                    } else {
+                        return t.union([t.reference("File"), t.string()]);
+                    }
+                }
                 return schema.nullable ? t.union([t.string(), t.reference("null")]) : t.string();
+            }
             if (schemaType === "boolean")
                 return schema.nullable ? t.union([t.boolean(), t.reference("null")]) : t.boolean();
             if (schemaType === "number" || schemaType === "integer")
@@ -285,7 +294,11 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
                     }
 
                     // Apply discriminator literal type for TypeScript if this is a discriminator property
-                    if (ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) && !isReferenceObject(propSchema) && propSchema.type === 'string') {
+                    if (
+                        ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) &&
+                        !isReferenceObject(propSchema) &&
+                        propSchema.type === "string"
+                    ) {
                         // Check discriminator value using handler
                         const currentRef = inheritedMeta?.$ref || ctx?.rootRef;
                         if (currentRef) {
@@ -368,4 +381,3 @@ const wrapTypeIfInline = ({
 
     return typeDef as ts.Node;
 };
-

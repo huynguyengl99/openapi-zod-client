@@ -26,6 +26,7 @@ type UserDetails = {
   email: string;
   firstName?: string | undefined;
   lastName?: string | undefined;
+  avatarImage?: (string | null) | undefined;
 };
 type LoginRequest = {
   email: string;
@@ -69,6 +70,7 @@ type PasswordResetRequest = {
 type PatchedUserDetailsRequest = Partial<{
   firstName: string;
   lastName: string;
+  avatarImage: File | string | null;
 }>;
 type Register = {
   detail: string;
@@ -92,6 +94,7 @@ type TokenVerifyRequest = {
 type UserDetailsRequest = Partial<{
   firstName: string;
   lastName: string;
+  avatarImage: File | string | null;
 }>;
 type VerifyEmail = {
   detail: string;
@@ -109,6 +112,7 @@ const UserDetails: z.ZodType<UserDetails> = z
     email: z.string().email(),
     firstName: z.string().max(150).optional(),
     lastName: z.string().max(150).optional(),
+    avatarImage: z.string().url().nullish(),
   })
   .passthrough();
 const Login: z.ZodType<Login> = z
@@ -207,11 +211,19 @@ const TokenVerifyRequest: z.ZodType<TokenVerifyRequest> = z
   .object({ token: z.string().min(1) })
   .passthrough();
 const UserDetailsRequest: z.ZodType<UserDetailsRequest> = z
-  .object({ firstName: z.string().max(150), lastName: z.string().max(150) })
+  .object({
+    firstName: z.string().max(150),
+    lastName: z.string().max(150),
+    avatarImage: z.instanceof(File).nullable(),
+  })
   .partial()
   .passthrough();
 const PatchedUserDetailsRequest: z.ZodType<PatchedUserDetailsRequest> = z
-  .object({ firstName: z.string().max(150), lastName: z.string().max(150) })
+  .object({
+    firstName: z.string().max(150),
+    lastName: z.string().max(150),
+    avatarImage: z.instanceof(File).nullable(),
+  })
   .partial()
   .passthrough();
 

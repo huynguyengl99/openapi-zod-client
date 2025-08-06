@@ -728,6 +728,10 @@ components:
         lastName:
           type: string
           maxLength: 150
+        avatarImage:
+          type: string
+          format: binary
+          nullable: true
     Register:
       type: object
       description: User registration with email verification.
@@ -843,6 +847,10 @@ components:
         lastName:
           type: string
           maxLength: 150
+        avatarImage:
+          type: string
+          format: uri
+          nullable: true
       required:
       - email
       - pk
@@ -856,6 +864,10 @@ components:
         lastName:
           type: string
           maxLength: 150
+        avatarImage:
+          type: string
+          format: binary
+          nullable: true
     VerifyEmail:
       type: object
       description: Email address verification with confirmation key.

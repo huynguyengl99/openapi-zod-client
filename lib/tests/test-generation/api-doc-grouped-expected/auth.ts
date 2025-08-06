@@ -17,6 +17,7 @@ type UserDetails = {
   email: string;
   firstName?: string | undefined;
   lastName?: string | undefined;
+  avatarImage?: (string | null) | undefined;
 };
 type PasswordChangeRequest = {
   newPassword1: string;
@@ -55,10 +56,12 @@ type CookieTokenRefresh = {
 type UserDetailsRequest = Partial<{
   firstName: string;
   lastName: string;
+  avatarImage: File | string | null;
 }>;
 type PatchedUserDetailsRequest = Partial<{
   firstName: string;
   lastName: string;
+  avatarImage: File | string | null;
 }>;
 
 const UserDetails: z.ZodType<UserDetails> = z
@@ -67,6 +70,7 @@ const UserDetails: z.ZodType<UserDetails> = z
     email: z.string().email(),
     firstName: z.string().max(150).optional(),
     lastName: z.string().max(150).optional(),
+    avatarImage: z.string().url().nullish(),
   })
   .passthrough();
 const Login: z.ZodType<Login> = z
@@ -128,11 +132,19 @@ const CookieTokenRefresh: z.ZodType<CookieTokenRefresh> = z
   })
   .passthrough();
 const UserDetailsRequest: z.ZodType<UserDetailsRequest> = z
-  .object({ firstName: z.string().max(150), lastName: z.string().max(150) })
+  .object({
+    firstName: z.string().max(150),
+    lastName: z.string().max(150),
+    avatarImage: z.instanceof(File).nullable(),
+  })
   .partial()
   .passthrough();
 const PatchedUserDetailsRequest: z.ZodType<PatchedUserDetailsRequest> = z
-  .object({ firstName: z.string().max(150), lastName: z.string().max(150) })
+  .object({
+    firstName: z.string().max(150),
+    lastName: z.string().max(150),
+    avatarImage: z.instanceof(File).nullable(),
+  })
   .partial()
   .passthrough();
 
