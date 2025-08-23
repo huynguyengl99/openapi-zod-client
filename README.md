@@ -59,6 +59,7 @@ For more info, run any command with the `--help` flag:
 Options:
   -o, --output <path>               Output path for the zodios api client ts file (defaults to `<input>.client.ts`)
   -t, --template <path>             Template path for the handlebars template that will be used to generate the output
+  --common-template <path>          Template path for the handlebars template that will be used to generate the common.ts file
   -p, --prettier <path>             Prettier config path that will be used to format the output client file
   -b, --base-url <url>              Base url for the api
   --no-with-alias                   With alias as api client methods (default: true)

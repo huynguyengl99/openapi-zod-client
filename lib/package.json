@@ -1,6 +1,6 @@
 {
     "name": "@huynguyengl99/openapi-zod-client",
-    "version": "1.18.21",
+    "version": "1.18.22",
     "repository": {
         "type": "git",
         "url": "https://github.com/huynguyengl99/openapi-zod-client.git"
