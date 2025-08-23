@@ -19,6 +19,10 @@ cli.command("<input>", "path/url to OpenAPI/Swagger document as json/yaml")
         "-t, --template <path>",
         "Template path for the handlebars template that will be used to generate the output"
     )
+    .option(
+        "--common-template <path>",
+        "Template path for the handlebars template that will be used to generate the common.ts file"
+    )
     .option("-p, --prettier <path>", "Prettier config path that will be used to format the output client file")
     .option("-b, --base-url <url>", "Base url for the api")
     .option("--no-with-alias", "With alias as api client methods")
@@ -97,6 +101,7 @@ cli.command("<input>", "path/url to OpenAPI/Swagger document as json/yaml")
                 strictObjects: options.strictObjects,
                 additionalPropertiesDefaultValue,
                 groupIndex: options.groupIndex,
+                commonTemplatePath: options.commonTemplate,
             },
         });
         console.log(`Done generating <${distPath}> !`);

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { Timestamp, Status } from "./common";
+import { Timestamp } from "./common";
+import { Status } from "./common";
 
 const User = Timestamp.and(
   z

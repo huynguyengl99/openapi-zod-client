@@ -1243,16 +1243,6 @@ test("group-strategy with complex schemas + split files", async () => {
                       "response": "Country",
                   },
               ],
-              "groupedImports": [
-                  {
-                      "file": "common",
-                      "names": [
-                          "Country",
-                          "Store",
-                          "User",
-                      ],
-                  },
-              ],
               "imports": {
                   "Country": "common",
                   "Store": "common",
@@ -1300,14 +1290,6 @@ test("group-strategy with complex schemas + split files", async () => {
                       "response": "Pet",
                   },
               ],
-              "groupedImports": [
-                  {
-                      "file": "common",
-                      "names": [
-                          "User",
-                      ],
-                  },
-              ],
               "imports": {
                   "User": "common",
               },
@@ -1337,16 +1319,6 @@ test("group-strategy with complex schemas + split files", async () => {
                       "response": "Store",
                   },
               ],
-              "groupedImports": [
-                  {
-                      "file": "common",
-                      "names": [
-                          "Store",
-                          "Country",
-                          "User",
-                      ],
-                  },
-              ],
               "imports": {
                   "Country": "common",
                   "Store": "common",
@@ -1374,14 +1346,6 @@ test("group-strategy with complex schemas + split files", async () => {
                       "path": "/user",
                       "requestFormat": "json",
                       "response": "User",
-                  },
-              ],
-              "groupedImports": [
-                  {
-                      "file": "common",
-                      "names": [
-                          "User",
-                      ],
                   },
               ],
               "imports": {

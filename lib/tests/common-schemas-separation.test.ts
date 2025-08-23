@@ -22,6 +22,7 @@ test("should generate schemas-only common.ts when using schemas-only template", 
         options: {
             groupStrategy: "tag-file",
             shouldExportAllSchemas: true,
+            commonTemplatePath: resolve(__dirname, "../src/templates/common-schemas-only.hbs"),
         },
     });
 
@@ -63,6 +64,7 @@ test("should generate types-only common.ts when using types-only template", asyn
         options: {
             groupStrategy: "tag-file",
             shouldExportAllTypes: true,
+            commonTemplatePath: resolve(__dirname, "../src/templates/common-types-only.hbs"),
         },
     });
 

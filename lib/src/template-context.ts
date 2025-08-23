@@ -212,21 +212,6 @@ export const getZodClientTemplateContext = (
 
             group.schemas = sortObjKeysFromArray(groupSchemas, getPureSchemaNames(schemaOrderedByDependencies));
             group.types = groupTypes;
-
-            // Create grouped imports
-            if (group.imports) {
-                const importsByFile = new Map<string, string[]>();
-                Object.entries(group.imports).forEach(([name, file]) => {
-                    if (!importsByFile.has(file)) {
-                        importsByFile.set(file, []);
-                    }
-                    importsByFile.get(file)!.push(name);
-                });
-                group.groupedImports = Array.from(importsByFile.entries()).map(([file, names]) => ({
-                    file,
-                    names,
-                }));
-            }
         });
         data.commonSchemaNames = new Set(
             sortListFromRefArray(Array.from(commonSchemaNames), getPureSchemaNames(schemaOrderedByDependencies))
@@ -240,7 +225,6 @@ const makeEndpointTemplateContext = (): MinimalTemplateContext => ({ schemas: {}
 
 type MinimalTemplateContext = Pick<TemplateContext, "endpoints" | "schemas" | "types"> & {
     imports?: Record<string, string>;
-    groupedImports?: Array<{ file: string; names: string[] }>;
 };
 
 const makeTemplateContext = (): TemplateContext => {
@@ -444,4 +428,10 @@ export type TemplateContextOptions = {
      * A function that runs in the schema conversion process to refine the schema before it's converted to a Zod schema.
      */
     schemaRefiner?: <T extends SchemaObject | ReferenceObject>(schema: T, parentMeta?: CodeMetaData) => T;
+
+    /**
+     * Path to a custom template to use for generating common.ts files.
+     * When not provided, uses the default grouped-common.hbs template.
+     */
+    commonTemplatePath?: string;
 };
