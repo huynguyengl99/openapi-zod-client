@@ -79,7 +79,18 @@ export const generateZodClientFromOpenAPI = async <TOptions extends TemplateCont
             await fs.writeFile(path.join(distPath, "index.ts"), indexOutput);
         }
 
-        const commonSource = await fs.readFile(path.join(__dirname, "../src/templates/grouped-common.hbs"), "utf8");
+        // Determine which common template to use based on the main template
+        let commonTemplatePath = path.join(__dirname, "../src/templates/grouped-common.hbs");
+        const templateName = path.basename(templatePath);
+
+        if (templateName === "schemas-only.hbs") {
+            commonTemplatePath = path.join(__dirname, "../src/templates/schemas-only.hbs");
+        } else if (templateName === "types-only.hbs") {
+            commonTemplatePath = path.join(__dirname, "../src/templates/types-only.hbs");
+        }
+        // Default case: use grouped-common.hbs for templates that support both types and schemas
+
+        const commonSource = await fs.readFile(commonTemplatePath, "utf8");
         const commonTemplate = hbs.compile(commonSource);
         const commonSchemaNames = [...(data.commonSchemaNames ?? [])];
 
@@ -99,9 +110,24 @@ export const generateZodClientFromOpenAPI = async <TOptions extends TemplateCont
         }
 
         for (const groupName in data.endpointsGroups) {
+            const group = data.endpointsGroups[groupName];
+
+            // Skip writing files that have no schemas or types (only for schemas-only and types-only templates)
+            const templateName = path.basename(templatePath);
+            const isSpecializedTemplate = templateName === "schemas-only.hbs" || templateName === "types-only.hbs";
+
+            if (isSpecializedTemplate) {
+                const hasSchemas = group && Object.keys(group.schemas || {}).length > 0;
+                const hasTypes = group && Object.keys(group.types || {}).length > 0;
+
+                if (!hasSchemas && !hasTypes) {
+                    continue;
+                }
+            }
+
             const groupOutput = template({
                 ...data,
-                ...data.endpointsGroups[groupName],
+                ...group,
                 options: {
                     ...options,
                     groupStrategy: "none",

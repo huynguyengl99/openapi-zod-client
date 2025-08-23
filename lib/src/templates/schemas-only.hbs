@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+{{#if groupedImports}}
+{{#each groupedImports}}
+import { {{#each names}}{{this}}{{#unless @last}}, {{/unless}}{{/each}} } from "./{{file}}";
+{{/each}}
+{{/if}}
+
 {{#each schemas}}
 const {{@key}} = {{{this}}};
 {{/each}}

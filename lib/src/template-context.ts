@@ -58,7 +58,12 @@ export const getZodClientTemplateContext = (
         const ref = asComponentSchema(name);
         const isCircular = ref && depsGraphs.deepDependencyGraph[ref]?.has(ref);
         const discriminatorHandler = new DiscriminatorHandler(openApiDoc);
-        const ctx: TsConversionContext = { nodeByRef: {}, resolver: result.resolver, visitedsRefs: {}, discriminatorHandler };
+        const ctx: TsConversionContext = {
+            nodeByRef: {},
+            resolver: result.resolver,
+            visitedsRefs: {},
+            discriminatorHandler,
+        };
 
         // Specifically check isCircular if shouldExportAllTypes is false. Either should cause shouldGenerateType to be true.
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
@@ -207,6 +212,21 @@ export const getZodClientTemplateContext = (
 
             group.schemas = sortObjKeysFromArray(groupSchemas, getPureSchemaNames(schemaOrderedByDependencies));
             group.types = groupTypes;
+
+            // Create grouped imports
+            if (group.imports) {
+                const importsByFile = new Map<string, string[]>();
+                Object.entries(group.imports).forEach(([name, file]) => {
+                    if (!importsByFile.has(file)) {
+                        importsByFile.set(file, []);
+                    }
+                    importsByFile.get(file)!.push(name);
+                });
+                group.groupedImports = Array.from(importsByFile.entries()).map(([file, names]) => ({
+                    file,
+                    names,
+                }));
+            }
         });
         data.commonSchemaNames = new Set(
             sortListFromRefArray(Array.from(commonSchemaNames), getPureSchemaNames(schemaOrderedByDependencies))
@@ -220,6 +240,7 @@ const makeEndpointTemplateContext = (): MinimalTemplateContext => ({ schemas: {}
 
 type MinimalTemplateContext = Pick<TemplateContext, "endpoints" | "schemas" | "types"> & {
     imports?: Record<string, string>;
+    groupedImports?: Array<{ file: string; names: string[] }>;
 };
 
 const makeTemplateContext = (): TemplateContext => {

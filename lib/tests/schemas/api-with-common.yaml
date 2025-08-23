@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: API with Common Schemas
+  version: 1.0.0
+  description: OpenAPI specification designed to test common schema generation
+
+paths:
+  /api/users:
+    get:
+      operationId: getUsers
+      description: Get list of users
+      tags:
+        - users
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      operationId: createUser
+      description: Create a new user
+      tags:
+        - users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /api/posts:
+    get:
+      operationId: getPosts
+      description: Get list of posts
+      tags:
+        - posts
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+    post:
+      operationId: createPost
+      description: Create a new post
+      tags:
+        - posts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+  /api/comments:
+    get:
+      operationId: getComments
+      description: Get list of comments
+      tags:
+        - comments
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+
+components:
+  schemas:
+    # Common schemas that will be shared across multiple tags
+    Status:
+      type: string
+      enum:
+        - active
+        - inactive
+        - pending
+    
+    Timestamp:
+      type: object
+      required:
+        - createdAt
+        - updatedAt
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    
+    ErrorResponse:
+      type: object
+      required:
+        - message
+        - code
+      properties:
+        message:
+          type: string
+        code:
+          type: integer
+        details:
+          type: string
+    
+    # User-related schemas
+    User:
+      allOf:
+        - $ref: '#/components/schemas/Timestamp'
+        - type: object
+          required:
+            - id
+            - name
+            - email
+            - status
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+            status:
+              $ref: '#/components/schemas/Status'
+            profileImage:
+              type: string
+              nullable: true
+    
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        profileImage:
+          type: string
+    
+    # Post-related schemas
+    Post:
+      allOf:
+        - $ref: '#/components/schemas/Timestamp'
+        - type: object
+          required:
+            - id
+            - title
+            - content
+            - authorId
+            - status
+          properties:
+            id:
+              type: integer
+            title:
+              type: string
+            content:
+              type: string
+            authorId:
+              type: integer
+            status:
+              $ref: '#/components/schemas/Status'
+            tags:
+              type: array
+              items:
+                type: string
+    
+    CreatePostRequest:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+    
+    # Comment-related schemas (uses common schemas too)
+    Comment:
+      allOf:
+        - $ref: '#/components/schemas/Timestamp'
+        - type: object
+          required:
+            - id
+            - content
+            - postId
+            - authorId
+            - status
+          properties:
+            id:
+              type: integer
+            content:
+              type: string
+            postId:
+              type: integer
+            authorId:
+              type: integer
+            status:
+              $ref: '#/components/schemas/Status'
