@@ -146,7 +146,18 @@ export const getZodClientTemplateContext = (
 
             const addDependencyIfNeeded = (schemaName: string) => {
                 if (!schemaName) return;
-                if (schemaName.startsWith("z.")) return;
+                if (schemaName.startsWith("z.")) {
+                    // Extract schema names referenced inside zod expressions like z.array(SchemaName)
+                    const refs = schemaName.match(/(?<![a-zA-Z0-9_])([A-Z][a-zA-Z0-9_]*)/g);
+                    if (refs) {
+                        refs.forEach((ref) => {
+                            if (data.schemas[ref]) {
+                                dependencies.add(ref);
+                            }
+                        });
+                    }
+                    return;
+                }
                 // Sometimes the schema includes a chain that should be removed from the dependency
                 const [normalizedSchemaName] = schemaName.split(".");
                 dependencies.add(normalizedSchemaName!);
