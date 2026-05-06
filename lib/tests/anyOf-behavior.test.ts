@@ -232,6 +232,8 @@ describe("anyOf behavior", () => {
           "import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
           import { z } from "zod";
 
+          type anyOfRef = (PetByAge | PetByType) | Array<PetByAge | PetByType>;
+
           const PetByAge = z
             .object({ age: z.number().int(), nickname: z.string().optional() })
             .passthrough();

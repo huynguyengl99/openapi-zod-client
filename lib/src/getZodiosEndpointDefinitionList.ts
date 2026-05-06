@@ -71,6 +71,9 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
         ctx.schemasByName = {};
     }
 
+    // Track inline parameter/request body schemas with oneOf/anyOf for type generation
+    const inlineParamSchemas: Record<string, SchemaObject> = {};
+
     const complexityThreshold = options?.complexityThreshold ?? 4;
     const getZodVarName = (input: CodeMeta, fallbackName?: string) => {
         const result = input.toString();
@@ -245,9 +248,18 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
                         // @ts-expect-error
                         paramSchema = mediaTypeObject?.schema ?? mediaTypeObject;
                     } else {
-                        paramSchema = isReferenceObject(paramItem.schema)
-                            ? ctx.resolver.getSchemaByRef(paramItem.schema.$ref)
-                            : paramItem.schema;
+                        paramSchema = paramItem.schema;
+                    }
+
+                    // Preserve the original $ref for oneOf/anyOf schemas so they resolve as named schemas
+                    let paramSchemaForZod: SchemaObject | ReferenceObject | undefined = undefined;
+                    if (paramSchema && isReferenceObject(paramSchema)) {
+                        const resolved = ctx.resolver.getSchemaByRef(paramSchema.$ref) as SchemaObject | undefined;
+                        if (resolved && (resolved.oneOf || resolved.anyOf)) {
+                            // Keep original $ref so getZodSchema resolves to the named schema
+                            paramSchemaForZod = paramSchema;
+                        }
+                        paramSchema = resolved;
                     }
 
                     if (options?.withDescription && paramSchema) {
@@ -261,8 +273,19 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
                               : paramSchema)!
                         : {};
 
+                    // Track inline oneOf/anyOf union schemas for type generation (skip single-item and $ref cases)
+                    const resolvedParamSchema = paramSchema as SchemaObject | undefined;
+                    if (
+                        resolvedParamSchema &&
+                        !paramSchemaForZod &&
+                        ((resolvedParamSchema.oneOf && resolvedParamSchema.oneOf.length > 1) ||
+                            (resolvedParamSchema.anyOf && resolvedParamSchema.anyOf.length > 1))
+                    ) {
+                        inlineParamSchemas[normalizeString(paramItem.name)] = resolvedParamSchema;
+                    }
+
                     const paramCode = getZodSchema({
-                        schema: paramSchema ?? {},
+                        schema: (paramSchemaForZod ?? paramSchema) ?? {},
                         ctx,
                         meta: { isRequired: paramItem.in === "path" ? true : paramItem.required ?? false },
                         options,
@@ -435,6 +458,7 @@ export const getZodiosEndpointDefinitionList = (doc: OpenAPIObject, options?: Te
         ...(ctx.schemasByName && { schemasByName: ctx.schemasByName }),
         ...graphs,
         endpoints,
+        ...(Object.keys(inlineParamSchemas).length > 0 && { inlineParamSchemas }),
         issues: {
             ignoredFallbackResponse,
             ignoredGenericError,

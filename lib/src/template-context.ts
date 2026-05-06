@@ -102,6 +102,26 @@ export const getZodClientTemplateContext = (
         }
     }
 
+    // Generate types for inline parameter schemas with oneOf/anyOf (e.g., query params with discriminated unions)
+    for (const [name, schema] of Object.entries(result.inlineParamSchemas ?? {})) {
+        if (!data.types[name]) {
+            const discriminatorHandler = new DiscriminatorHandler(openApiDoc);
+            const ctx: TsConversionContext = {
+                nodeByRef: {},
+                resolver: result.resolver,
+                visitedsRefs: {},
+                discriminatorHandler,
+            };
+            const node = getTypescriptFromOpenApi({
+                schema,
+                ctx,
+                meta: { name },
+                options,
+            }) as ts.Node;
+            data.types[name] = printTs(node).replace("export ", "");
+        }
+    }
+
     // TODO
     const schemaOrderedByDependencies = topologicalSort(depsGraphs.deepDependencyGraph).map(
         (ref) => result.resolver.resolveRef(ref).ref
