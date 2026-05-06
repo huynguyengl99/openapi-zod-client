@@ -1,19 +1,19 @@
-import { isSchemaObject, type ReferenceObject, type SchemaObject } from "openapi3-ts";
+import { type ReferenceObject, type SchemaObject, isSchemaObject } from "openapi3-ts";
 import { match } from "ts-pattern";
 
 import type { CodeMetaData, ConversionTypeContext } from "./CodeMeta";
 import { CodeMeta } from "./CodeMeta";
+import { inferRequiredSchema } from "./inferRequiredOnly";
 import { isReferenceObject } from "./isReferenceObject";
 import type { TemplateContext } from "./template-context";
 import { escapeControlCharacters, isPrimitiveType, wrapWithQuotesIfNeeded } from "./utils";
-import { inferRequiredSchema } from "./inferRequiredOnly";
 
 function getZodVersion(): 3 | 4 {
     try {
         const zodPackage = require("zod/package.json");
         const version = zodPackage.version;
         return version.startsWith("4.") ? 4 : 3;
-    } catch (error) {
+    } catch {
         return 3;
     }
 }
@@ -148,6 +148,7 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
             const type = getZodSchema({ schema: schema.allOf[0]!, ctx, meta, options });
             return code.assign(type.toString());
         }
+
         const { patchRequiredSchemaInLoop, noRequiredOnlyAllof, composedRequiredSchema } = inferRequiredSchema(schema);
 
         const types = noRequiredOnlyAllof.map((prop) => {
@@ -156,7 +157,7 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
             return zodSchema;
         });
 
-        if (composedRequiredSchema.required.length) {
+        if (composedRequiredSchema.required.length > 0) {
             types.push(
                 getZodSchema({
                     schema: composedRequiredSchema,
@@ -166,11 +167,12 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
                 })
             );
         }
+
         // Check if this is a discriminated union case (polymorphic schema)
-        const isDiscriminatedUnion = ctx?.discriminatorHandler && code.meta.referencedBy?.some(ref => 
-            ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref)
-        );
-        
+        const isDiscriminatedUnion =
+            ctx?.discriminatorHandler &&
+            code.meta.referencedBy?.some((ref) => ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref));
+
         const first = types.at(0)!;
         const methodName = isDiscriminatedUnion ? "merge" : "and";
         const rest = types
@@ -191,7 +193,6 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
                     return code.assign(`z.literal(${valueString})`);
                 }
 
-                // eslint-disable-next-line sonarjs/no-nested-template-literals
                 return code.assign(
                     `z.enum([${schema.enum.map((value) => (value === null ? "null" : `"${value}"`)).join(", ")}])`
                 );
@@ -293,23 +294,24 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
 
                 // Check if this property is a discriminator field and should use literal type
                 let propCode: string;
-                
+
                 // Only apply discriminator logic to known discriminator properties
-                if (ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) && !isReferenceObject(propSchema) && propSchema.type === 'string') {
+                if (
+                    ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) &&
+                    !isReferenceObject(propSchema) &&
+                    propSchema.type === "string"
+                ) {
                     // Find the schema reference that has a discriminator mapping
-                    const discriminatorRef = code.meta.referencedBy?.find(ref => 
-                        ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref)
+                    const discriminatorRef = code.meta.referencedBy?.find(
+                        (ref) => ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref)
                     );
-                    
+
                     if (discriminatorRef?.ref) {
                         const literalValue = ctx.discriminatorHandler.getLiteralValue(discriminatorRef.ref);
-                        if (literalValue) {
-                            propCode = `z.literal("${literalValue}")`;
-                        } else {
-                            propCode =
-                                getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
-                                getZodChain({ schema: propActualSchema as SchemaObject, meta: propMetadata, options });
-                        }
+                        propCode = literalValue
+                            ? `z.literal("${literalValue}")`
+                            : getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
+                              getZodChain({ schema: propActualSchema as SchemaObject, meta: propMetadata, options });
                     } else {
                         propCode =
                             getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
@@ -518,4 +520,3 @@ const getZodChainableArrayValidations = (schema: SchemaObject) => {
 
     return validations.join(".");
 };
-

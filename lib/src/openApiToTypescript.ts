@@ -2,13 +2,13 @@ import type { ReferenceObject, SchemaObject } from "openapi3-ts";
 import { t, ts } from "tanu";
 import type { TypeDefinition, TypeDefinitionObject } from "tanu/dist/type";
 
+import type { DiscriminatorHandler } from "./discriminator";
+import generateJSDocArray from "./generateJSDocArray";
+import { inferRequiredSchema } from "./inferRequiredOnly";
 import { isReferenceObject } from "./isReferenceObject";
 import type { DocumentResolver } from "./makeSchemaResolver";
 import type { TemplateContext } from "./template-context";
 import { wrapWithQuotesIfNeeded } from "./utils";
-import { inferRequiredSchema } from "./inferRequiredOnly";
-import generateJSDocArray from "./generateJSDocArray";
-import type { DiscriminatorHandler } from "./discriminator";
 
 type TsConversionArgs = {
     schema: SchemaObject | ReferenceObject;
@@ -199,14 +199,14 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
             if (schemaType === "string") {
                 // Handle binary format as File type
                 if (!isReferenceObject(schema) && schema.format === "binary") {
-                    if (schema.nullable) {
-                        return t.union([t.reference("File"), t.string(), t.reference("null")]);
-                    } else {
-                        return t.union([t.reference("File"), t.string()]);
-                    }
+                    return schema.nullable
+                        ? t.union([t.reference("File"), t.string(), t.reference("null")])
+                        : t.union([t.reference("File"), t.string()]);
                 }
+
                 return schema.nullable ? t.union([t.string(), t.reference("null")]) : t.string();
             }
+
             if (schemaType === "boolean")
                 return schema.nullable ? t.union([t.boolean(), t.reference("null")]) : t.boolean();
             if (schemaType === "number" || schemaType === "integer")

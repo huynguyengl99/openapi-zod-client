@@ -1,4 +1,4 @@
-import type { OpenAPIObject, SchemaObject } from "openapi3-ts";
+import type { OpenAPIObject } from "openapi3-ts";
 
 /**
  * Handles discriminated union logic for OpenAPI schemas.
@@ -6,7 +6,7 @@ import type { OpenAPIObject, SchemaObject } from "openapi3-ts";
  */
 export class DiscriminatorHandler {
     private mappings: Record<string, string> = {};
-    private properties: Set<string> = new Set();
+    private readonly properties = new Set<string>();
 
     constructor(doc: OpenAPIObject) {
         this.buildMappings(doc);
@@ -51,17 +51,17 @@ export class DiscriminatorHandler {
 
         // Find all oneOf schemas with discriminator mappings
         for (const [, schema] of Object.entries(doc.components.schemas)) {
-            if (schema && typeof schema === 'object' && 'oneOf' in schema) {
-                const oneOfSchema = schema as SchemaObject;
+            if (schema && typeof schema === "object" && "oneOf" in schema) {
+                const oneOfSchema = schema;
                 if (oneOfSchema.oneOf && oneOfSchema.discriminator?.mapping) {
                     const mapping = oneOfSchema.discriminator.mapping;
                     const propertyName = oneOfSchema.discriminator.propertyName;
-                    
+
                     // Track discriminator property name
                     if (propertyName) {
                         this.properties.add(propertyName);
                     }
-                    
+
                     // Map each discriminator value to its schema reference
                     for (const [discriminatorValue, schemaRef] of Object.entries(mapping)) {
                         this.mappings[schemaRef] = discriminatorValue;

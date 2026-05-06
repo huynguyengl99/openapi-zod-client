@@ -1,9 +1,9 @@
-import type { OpenAPIObject, ReferenceObject, SchemaObject } from "openapi3-ts";
+import type { ReferenceObject, SchemaObject } from "openapi3-ts";
 
+import type { DiscriminatorHandler } from "./discriminator";
 import { isReferenceObject } from "./isReferenceObject";
 import type { DocumentResolver } from "./makeSchemaResolver";
 import { getSchemaComplexity } from "./schema-complexity";
-import type { DiscriminatorHandler } from "./discriminator";
 
 export type ConversionTypeContext = {
     resolver: DocumentResolver;

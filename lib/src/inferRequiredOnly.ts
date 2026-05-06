@@ -1,4 +1,5 @@
-import { type SchemaObject, type ReferenceObject, isReferenceObject } from "openapi3-ts";
+import { type ReferenceObject, type SchemaObject, isReferenceObject } from "openapi3-ts";
+
 import type { DocumentResolver } from "./makeSchemaResolver";
 
 const isBrokenAllOfItem = (item: SchemaObject | ReferenceObject): item is SchemaObject => {
@@ -13,6 +14,7 @@ const isBrokenAllOfItem = (item: SchemaObject | ReferenceObject): item is Schema
     ) {
         return true;
     }
+
     return false;
 };
 
@@ -22,17 +24,19 @@ export function inferRequiredSchema(schema: SchemaObject) {
             "function inferRequiredSchema is specialized to handle item with required only in an allOf array."
         );
     }
+
     const [standaloneRequisites, noRequiredOnlyAllof] = schema.allOf.reduce(
         (acc, cur) => {
             if (isBrokenAllOfItem(cur)) {
-                const required = (cur as SchemaObject).required;
+                const required = cur.required;
                 acc[0].push(...(required ?? []));
             } else {
                 acc[1].push(cur);
             }
+
             return acc;
         },
-        [[], []] as [string[], (SchemaObject | ReferenceObject)[]]
+        [[], []] as [string[], Array<SchemaObject | ReferenceObject>]
     );
 
     const composedRequiredSchema = {
@@ -63,7 +67,7 @@ export function inferRequiredSchema(schema: SchemaObject) {
                     });
                 }
             } else {
-                const properties = prop["properties"] ?? {};
+                const properties = prop.properties ?? {};
                 composedRequiredSchema.required.forEach((required) => {
                     if (properties[required]) {
                         composedRequiredSchema.properties[required] = properties[required] ?? {};

@@ -3,16 +3,16 @@ import { sortBy, sortListFromRefArray, sortObjKeysFromArray } from "pastable/ser
 import { ts } from "tanu";
 import { match } from "ts-pattern";
 
+import type { CodeMetaData } from "./CodeMeta";
+import { DiscriminatorHandler } from "./discriminator";
 import { getOpenApiDependencyGraph } from "./getOpenApiDependencyGraph";
 import type { EndpointDefinitionWithRefs } from "./getZodiosEndpointDefinitionList";
 import { getZodiosEndpointDefinitionList } from "./getZodiosEndpointDefinitionList";
 import type { TsConversionContext } from "./openApiToTypescript";
 import { getTypescriptFromOpenApi } from "./openApiToTypescript";
-import { DiscriminatorHandler } from "./discriminator";
 import { getZodSchema } from "./openApiToZod";
 import { topologicalSort } from "./topologicalSort";
 import { asComponentSchema, normalizeString } from "./utils";
-import type { CodeMetaData } from "./CodeMeta";
 
 const file = ts.createSourceFile("", "", ts.ScriptTarget.ESNext, true);
 const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
@@ -168,7 +168,7 @@ export const getZodClientTemplateContext = (
                 if (!schemaName) return;
                 if (schemaName.startsWith("z.")) {
                     // Extract schema names referenced inside zod expressions like z.array(SchemaName)
-                    const refs = schemaName.match(/(?<![a-zA-Z0-9_])([A-Z][a-zA-Z0-9_]*)/g);
+                    const refs = schemaName.match(/(?<!\w)([A-Z]\w*)/g);
                     if (refs) {
                         refs.forEach((ref) => {
                             if (data.schemas[ref]) {
@@ -176,8 +176,10 @@ export const getZodClientTemplateContext = (
                             }
                         });
                     }
+
                     return;
                 }
+
                 // Sometimes the schema includes a chain that should be removed from the dependency
                 const [normalizedSchemaName] = schemaName.split(".");
                 dependencies.add(normalizedSchemaName!);
