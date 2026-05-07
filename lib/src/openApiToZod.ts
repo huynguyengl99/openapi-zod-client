@@ -185,6 +185,22 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
 
     const schemaType = schema.type ? (schema.type.toLowerCase() as NonNullable<typeof schema.type>) : undefined;
     if (schemaType && isPrimitiveType(schemaType)) {
+        // Handle `const` keyword (OpenAPI 3.1 / JSON Schema) as a single-element enum
+        const constValue = (schema as any).const;
+        if (constValue !== undefined) {
+            if (constValue === null) {
+                return code.assign("z.literal(null)");
+            }
+
+            if (schemaType === "string") {
+                return code.assign(`z.literal("${constValue as string}")`);
+            }
+
+            if (typeof constValue === "boolean" || typeof constValue === "number") {
+                return code.assign(`z.literal(${String(constValue)})`);
+            }
+        }
+
         if (schema.enum) {
             if (schemaType === "string") {
                 if (schema.enum.length === 1) {
@@ -267,8 +283,19 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
             );
         }
 
-        const hasRequiredArray = schema.required && schema.required.length > 0;
-        const isPartial = options?.withImplicitRequiredProps ? false : !schema.required?.length;
+        // Properties with `const` values are implicitly required (needed for discriminatedUnion)
+        const constRequiredProps = schema.properties
+            ? Object.entries(schema.properties)
+                  .filter(([, propSchema]) => !isReferenceObject(propSchema) && (propSchema as any).const !== undefined)
+                  .map(([prop]) => prop)
+            : [];
+        const effectiveRequired = [
+            ...(schema.required ?? []),
+            ...constRequiredProps.filter((p) => !schema.required?.includes(p)),
+        ];
+
+        const hasRequiredArray = effectiveRequired.length > 0;
+        const isPartial = options?.withImplicitRequiredProps ? false : effectiveRequired.length === 0;
         let properties = "{}";
 
         if (schema.properties) {
@@ -278,7 +305,7 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
                     isRequired: isPartial
                         ? true
                         : hasRequiredArray
-                        ? schema.required?.includes(prop)
+                        ? effectiveRequired.includes(prop)
                         : options?.withImplicitRequiredProps,
                     name: prop,
                 } as CodeMetaData;
@@ -295,16 +322,32 @@ export function getZodSchema({ schema: $schema, ctx, meta: inheritedMeta, option
                 // Check if this property is a discriminator field and should use literal type
                 let propCode: string;
 
-                // Only apply discriminator logic to known discriminator properties
-                if (
+                // Prefer const value from the property schema itself (most authoritative)
+                const propConstValue = !isReferenceObject(propSchema) ? (propSchema as any).const : undefined;
+                if (propConstValue !== undefined) {
+                    if (typeof propConstValue === "string") {
+                        propCode = `z.literal("${propConstValue}")`;
+                    } else if (typeof propConstValue === "number" || typeof propConstValue === "boolean") {
+                        propCode = `z.literal(${String(propConstValue)})`;
+                    } else if (propConstValue === null) {
+                        propCode = "z.literal(null)";
+                    } else {
+                        propCode =
+                            getZodSchema({ schema: propSchema, ctx, meta: propMetadata, options }) +
+                            getZodChain({ schema: propActualSchema as SchemaObject, meta: propMetadata, options });
+                    }
+                } else if (
+                    // Apply discriminator logic to known discriminator properties
                     ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) &&
                     !isReferenceObject(propSchema) &&
                     propSchema.type === "string"
                 ) {
                     // Find the schema reference that has a discriminator mapping
-                    const discriminatorRef = code.meta.referencedBy?.find(
-                        (ref) => ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref)
-                    );
+                    // Search from the end (most specific/current ref) to avoid picking up parent refs
+                    const discriminatorRef = code.meta.referencedBy
+                        ?.slice()
+                        .reverse()
+                        .find((ref) => ref.ref && ctx.discriminatorHandler?.getLiteralValue(ref.ref));
 
                     if (discriminatorRef?.ref) {
                         const literalValue = ctx.discriminatorHandler.getLiteralValue(discriminatorRef.ref);

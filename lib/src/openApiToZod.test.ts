@@ -293,6 +293,27 @@ test("getSchemaAsZodString", () => {
     );
     expect(getSchemaAsZodString({ type: "number", enum: [1] })).toMatchInlineSnapshot('"z.literal(1)"');
     expect(getSchemaAsZodString({ type: "string", enum: ["aString"] })).toMatchInlineSnapshot('"z.literal("aString")"');
+
+    // const keyword (OpenAPI 3.1 / JSON Schema)
+    expect(getSchemaAsZodString({ type: "string", const: "current" } as any)).toMatchInlineSnapshot(
+        '"z.literal("current")"'
+    );
+    expect(getSchemaAsZodString({ type: "number", const: 42 } as any)).toMatchInlineSnapshot('"z.literal(42)"');
+    expect(getSchemaAsZodString({ type: "boolean", const: true } as any)).toMatchInlineSnapshot('"z.literal(true)"');
+    expect(getSchemaAsZodString({ type: "string", const: null } as any)).toMatchInlineSnapshot('"z.literal(null)"');
+
+    // const in object properties - const props are implicitly required
+    expect(
+        getSchemaAsZodString({
+            type: "object",
+            properties: {
+                mode: { type: "string", const: "fast" } as any,
+                name: { type: "string" },
+            },
+        })
+    ).toMatchInlineSnapshot(
+        '"z.object({ mode: z.literal("fast"), name: z.string().optional() }).passthrough()"'
+    );
 });
 
 test("getSchemaWithChainableAsZodString", () => {

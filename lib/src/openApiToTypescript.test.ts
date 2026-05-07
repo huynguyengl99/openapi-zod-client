@@ -294,6 +294,31 @@ test("getSchemaAsTsString", () => {
     );
     expect(getSchemaAsTsString({ type: "number", enum: [1, 2, 3] })).toMatchInlineSnapshot('"1 | 2 | 3"');
 
+    // const keyword (OpenAPI 3.1 / JSON Schema)
+    expect(getSchemaAsTsString({ type: "string", const: "current" } as any)).toMatchInlineSnapshot('""current""');
+    expect(getSchemaAsTsString({ type: "number", const: 42 } as any)).toMatchInlineSnapshot('"42"');
+    expect(getSchemaAsTsString({ type: "boolean", const: true } as any)).toMatchInlineSnapshot('"true"');
+    expect(getSchemaAsTsString({ type: "string", const: null } as any)).toMatchInlineSnapshot('"null"');
+
+    // const in object properties - const props are implicitly required
+    expect(
+        getSchemaAsTsString(
+            {
+                type: "object",
+                properties: {
+                    mode: { type: "string", const: "fast" } as any,
+                    name: { type: "string" },
+                },
+            },
+            { name: "ObjectWithConst" }
+        )
+    ).toMatchInlineSnapshot(`
+      "export type ObjectWithConst = {
+          mode: "fast";
+          name?: string | undefined;
+      };"
+    `);
+
     expect(
         getSchemaAsTsString(
             {

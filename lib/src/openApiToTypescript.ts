@@ -184,6 +184,16 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
 
         const schemaType = schema.type ? (schema.type.toLowerCase() as NonNullable<typeof schema.type>) : undefined;
         if (schemaType && isPrimitiveType(schemaType)) {
+            // Handle `const` keyword (OpenAPI 3.1 / JSON Schema) as a literal type
+            const constValue = (schema as any).const;
+            if (constValue !== undefined) {
+                if (constValue === null) {
+                    return t.reference("null");
+                }
+
+                return t.union([constValue]);
+            }
+
             if (schema.enum) {
                 if (schemaType !== "string" && schema.enum.some((e) => typeof e === "string")) {
                     return schema.nullable ? t.union([t.never(), t.reference("null")]) : t.never();
@@ -243,7 +253,16 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
 
             canBeWrapped = false;
 
-            const isPartial = !schema.required?.length;
+            // Properties with `const` values are implicitly required
+            const constRequiredProps = Object.entries(schema.properties)
+                .filter(([, propSchema]) => !isReferenceObject(propSchema) && (propSchema as any).const !== undefined)
+                .map(([prop]) => prop);
+            const effectiveRequired = [
+                ...(schema.required ?? []),
+                ...constRequiredProps.filter((p) => !schema.required?.includes(p)),
+            ];
+
+            const isPartial = effectiveRequired.length === 0;
             let additionalProperties;
             if (schema.additionalProperties) {
                 let additionalPropertiesType;
@@ -281,35 +300,44 @@ TsConversionArgs): ts.Node | TypeDefinitionObject | string => {
 
             const props = Object.fromEntries(
                 Object.entries(schema.properties).map(([prop, propSchema]) => {
-                    let propType = getTypescriptFromOpenApi({
-                        schema: propSchema,
-                        ctx,
-                        meta,
-                        options,
-                    }) as TypeDefinition;
-                    if (typeof propType === "string") {
-                        if (!ctx) throw new Error("Context is required for circular $ref (recursive schemas)");
-                        // TODO Partial ?
-                        propType = t.reference(propType);
-                    }
+                    let propType: TypeDefinition;
 
-                    // Apply discriminator literal type for TypeScript if this is a discriminator property
-                    if (
-                        ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) &&
-                        !isReferenceObject(propSchema) &&
-                        propSchema.type === "string"
-                    ) {
-                        // Check discriminator value using handler
-                        const currentRef = inheritedMeta?.$ref || ctx?.rootRef;
-                        if (currentRef) {
-                            const discriminatorValue = ctx.discriminatorHandler.getLiteralValue(currentRef);
-                            if (discriminatorValue) {
-                                propType = discriminatorValue;
+                    // Prefer const value from the property schema itself (most authoritative)
+                    const propConstValue = !isReferenceObject(propSchema) ? (propSchema as any).const : undefined;
+                    if (propConstValue !== undefined) {
+                        // Raw literal value (string, number, boolean) or null - tanu handles as literal type
+                        propType = propConstValue === null ? t.reference("null") : propConstValue;
+                    } else {
+                        propType = getTypescriptFromOpenApi({
+                            schema: propSchema,
+                            ctx,
+                            meta,
+                            options,
+                        }) as TypeDefinition;
+                        if (typeof propType === "string") {
+                            if (!ctx) throw new Error("Context is required for circular $ref (recursive schemas)");
+                            // TODO Partial ?
+                            propType = t.reference(propType);
+                        }
+
+                        // Apply discriminator literal type for TypeScript if this is a discriminator property
+                        if (
+                            ctx?.discriminatorHandler?.isDiscriminatorProperty(prop) &&
+                            !isReferenceObject(propSchema) &&
+                            propSchema.type === "string"
+                        ) {
+                            // Check discriminator value using handler
+                            const currentRef = inheritedMeta?.$ref ?? ctx?.rootRef;
+                            if (currentRef) {
+                                const discriminatorValue = ctx.discriminatorHandler.getLiteralValue(currentRef);
+                                if (discriminatorValue) {
+                                    propType = discriminatorValue;
+                                }
                             }
                         }
                     }
 
-                    const isRequired = Boolean(isPartial ? true : schema.required?.includes(prop));
+                    const isRequired = Boolean(isPartial ? true : effectiveRequired.includes(prop));
                     return [`${wrapWithQuotesIfNeeded(prop)}`, isRequired ? propType : t.optional(propType)];
                 })
             );
